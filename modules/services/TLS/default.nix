@@ -6,6 +6,10 @@ let
   cfg = config.nixcloud.TLS;
   stateDir = "/var/lib/nixcloud/TLS";
 
+  replace = [ "." ];
+  replaceWith = [ "-" ];
+  filterIdentifier = replaceChars replace replaceWith;
+
   nixcloudTLSDomainType = mkOptionType {
     name = "nixcloud.TLS.certs.<name>.domain";
     check = x: (isString x && x != "")
@@ -229,12 +233,12 @@ in
           chmod 0755 ${stateDir}
           mv $TMPDIR/usersupplied ${stateDir}/${cert}/
           chmod 0660 ${stateDir}/${cert} -R
-          chown :${cert} ${stateDir}/${cert} -R
+          chown :${filterIdentifier cert} ${stateDir}/${cert} -R
         '';
         preStart = ''
           mkdir -p ${stateDir}/${cert}/
           chmod 0660 ${stateDir}/${cert} -R
-          chown :${cert} ${stateDir}/${cert} -R
+          chown :${filterIdentifier cert} ${stateDir}/${cert} -R
         '';
         serviceConfig = {
           Type = "oneshot";
@@ -272,12 +276,12 @@ in
           chmod 0755 ${stateDir}
           mv $TMPDIR/selfsigned ${stateDir}/${cert}/
           chmod 0660 ${stateDir}/${cert} -R
-          chown :${cert} ${stateDir}/${cert} -R
+          chown :${filterIdentifier cert} ${stateDir}/${cert} -R
         '';
         preStart = ''
           mkdir -p ${stateDir}/${cert}/
           chmod 0660 ${stateDir}/${cert} -R
-          chown :${cert} ${stateDir}/${cert} -R
+          chown :${filterIdentifier cert} ${stateDir}/${cert} -R
         '';
         serviceConfig = {
           Type = "oneshot";
@@ -297,7 +301,7 @@ in
       "${cert}" = let c = config.nixcloud.TLS.certs.${cert}; in {
         domain = "${c.domain}";
         email = c.email;
-        group = "${cert}";
+        group = "${filterIdentifier cert}";
         allowKeysForGroup = true;
         webroot = "/var/lib/acme/acme-challenges";
         postRun = ''
@@ -308,7 +312,7 @@ in
     } else con) {} (attrNames config.nixcloud.TLS.certs);
 
     users.groups = fold (cert: con: con // {
-      "${cert}" = let c = config.nixcloud.TLS.certs.${cert}; in { members = c.users; };
+      "${filterIdentifier cert}" = let c = config.nixcloud.TLS.certs.${cert}; in { members = c.users; };
     }) {} (attrNames config.nixcloud.TLS.certs);
 
     systemd.services = listToAttrs (selfsignedTargets ++ usersuppliedTargets);
