@@ -17,6 +17,7 @@
     static-darkhttpd  = services/static-darkhttpd;
     static-nginx      = services/static-nginx;
     mattermost        = services/mattermost;
+    phabricator       = services/phabricator;
   }) ++ lib.singleton customModule;
 
   config = let
